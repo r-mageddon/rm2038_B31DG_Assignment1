@@ -19,9 +19,41 @@ static const char *TAG = "example";
 /* Use project configuration menu (idf.py menuconfig) to choose the GPIO to blink,
    or you can edit the following line and set a number here.
 */
-#define BLINK_GPIO 19
 
-static uint8_t s_led_state = 0;
+// Pin definitions
+#define greenLED 19
+#define redLED 21
+#define OUTPUT_SELECT 23
+#define OUTPUT_ENABLE 15
+#define TSyncON 50
+
+// Defining paramters
+/*
+* a -> Delay value of first pulse in TsyncON (microseconds)
+* b -> Delay value of off-time between each pulse (microseconds)
+* c -> Number of waveforms in data waveform cycle
+* d -> Time delay at end of TsyncON before starting next TsyncON cycle
+*/
+const int param_a = 13 * 100/1000;  // surname letter = m, value = 1300 ms
+const int param_b = 1 * 100/1000;   // surname letter = a, value = 0.1 ms
+const int param_c = 3 + 4;          // surname letter = x, value = 7
+const int param_d = 4 * 500/1000;   // surname letter = w, value = 2 ms
+
+// Button values
+bool buttonSelectState; // Read value for button select state
+bool buttonEnableState; // Read value for button enable state
+const int debounceDelay = 500; // Delay to prevent debounce causing continuous incrementation 
+                               // of count value
+
+// OUTPUT_ENABLE counter
+int count = 0;
+
+// toggle button Enable state
+bool toggle = 1;
+
+//////////////////////////////////////////////////////////
+////////////// idf.py configuration output 1 /////////////
+//////////////////////////////////////////////////////////
 
 #ifdef CONFIG_BLINK_LED_STRIP
 
@@ -30,7 +62,7 @@ static led_strip_handle_t led_strip;
 static void blink_led(void)
 {
     /* If the addressable LED is enabled */
-    if (s_led_state) {
+    if (toggle) {
         /* Set the LED pixel using RGB from 0 (0%) to 255 (100%) for each color */
         led_strip_set_pixel(led_strip, 0, 16, 16, 16);
         /* Refresh the strip to send data */
@@ -69,36 +101,127 @@ static void configure_led(void)
 }
 
 #elif CONFIG_BLINK_LED_GPIO
-
-static void blink_led(void)
+//////////////////////////////////////////////////////////
+/////////// idf.py configuration main output /////////////
+//////////////////////////////////////////////////////////
+/*
+static void blink_redled(void)
 {
-    /* Set the GPIO level according to the state (LOW or HIGH)*/
-    gpio_set_level(BLINK_GPIO, s_led_state);
+    // Set the GPIO level according to the state (LOW or HIGH)
+    gpio_set_level(greenLED, toggle);
+}
+*/
+static void dataOutputSignal()
+{
+    // Start TsyncON pulse
+    gpio_set_level(redLED, 1); // activate red LED
+    vTaskDelay(0.05 / portTICK_PERIOD_MS); // Set 50 microseconds HIGH delay
+    gpio_set_level(redLED, 0); // deactivate red LED
+    // Start parameter A pulse
+    gpio_set_level(greenLED, 1); // activate green LED
+    vTaskDelay(param_a / portTICK_PERIOD_MS); // Parameter A pulse HIGH delay in milliseconds
+    gpio_set_level(greenLED, 0); // deactivate green LED
+    vTaskDelay(param_b / portTICK_PERIOD_MS); // Paramter B delay pulse LOW in milliseconds
+
+    for (int index = 1; index <= param_c; index++) // increment through index from 1 until parameter C is met
+    {
+        gpio_set_level(greenLED, 1); // Activate green LED
+        vTaskDelay((param_a +(index*50)) / portTICK_PERIOD_MS); // Delay next pulse by the sum of paramter A with the sum if the index*50 microseconds
+        gpio_set_level(greenLED, 0); // Deactivate green LED
+        vTaskDelay(param_b / portTICK_PERIOD_MS); // Paramter B delay pulse LOW in milliseconds
+    }
+
+    vTaskDelay(param_d / portTICK_PERIOD_MS);
 }
 
-static void configure_led(void)
+static void altDataOutputSignal()
 {
-    ESP_LOGI(TAG, "Example configured to blink GPIO LED!");
-    gpio_reset_pin(BLINK_GPIO);
-    /* Set the GPIO as a push/pull output */
-    gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
+    // Start TsyncON pulse
+    gpio_set_level(redLED, 1);
+    vTaskDelay(0.05 / portTICK_PERIOD_MS);
+    gpio_set_level(redLED, 0);
+
+    for (int index = param_c; index >= 1; index++)
+    {
+        gpio_set_level(greenLED, 1);
+        vTaskDelay(param_a / portTICK_PERIOD_MS);
+        gpio_set_level(greenLED, 0);
+        vTaskDelay(param_b / portTICK_PERIOD_MS);
+    }
+    // Start parameter A pulse
+    gpio_set_level(greenLED, 1);
+    vTaskDelay(param_a / portTICK_PERIOD_MS); // Delay in milliseconds
+    gpio_set_level(greenLED, 0);
+    vTaskDelay(param_b / portTICK_PERIOD_MS); // Delay next pulse by paramter B
+
+    vTaskDelay(param_d / portTICK_PERIOD_MS);
+}
+
+static void configureLEDsandButtons(void)
+{
+    // Reset the GPIOs to initial value on reset
+    gpio_reset_pin(greenLED);
+    gpio_reset_pin(redLED);
+    gpio_reset_pin(OUTPUT_ENABLE);
+    gpio_reset_pin(OUTPUT_SELECT);
+    // Set the LEDs as outputs
+    gpio_set_direction(greenLED, GPIO_MODE_OUTPUT);
+    gpio_set_direction(redLED, GPIO_MODE_OUTPUT);
+    // Set the button read pins as inputs
+    gpio_set_direction(OUTPUT_ENABLE, GPIO_MODE_INPUT);
+    gpio_set_direction(OUTPUT_SELECT, GPIO_MODE_INPUT);
 }
 
 #else
 #error "unsupported LED type"
 #endif
 
+//////////////////////////////////////////////////////////
+//////////////////// Main Function ///////////////////////
+//////////////////////////////////////////////////////////
+
 void app_main(void)
 {
 
     /* Configure the peripheral according to the LED type */
-    configure_led();
+    configureLEDsandButtons();
 
-    while (1) {
-        ESP_LOGI(TAG, "Turning the LED %s!", s_led_state == true ? "ON" : "OFF");
-        blink_led();
-        /* Toggle the LED state */
-        s_led_state = !s_led_state;
-        vTaskDelay(CONFIG_BLINK_PERIOD / portTICK_PERIOD_MS);
+    while (1) 
+    {
+       buttonEnableState = gpio_get_level(OUTPUT_ENABLE); // read enable button
+       buttonSelectState = gpio_get_level(OUTPUT_SELECT); // read select button
+
+       if (buttonEnableState == 1)
+       {
+            toggle = !toggle;
+            vTaskDelay(debounceDelay / portTICK_PERIOD_MS);
+            printf("Toggle =" + toggle);
+       }
+
+       if (buttonSelectState == 1)
+       {
+            count += 1;
+            vTaskDelay(debounceDelay / portTICK_PERIOD_MS);
+            printf("Count = " + count);
+       }
+
+       if (toggle == true)
+       {
+            switch (count)
+            {
+                case 0:
+                    dataOutputSignal();
+                    break;
+                case 1:
+                    altDataOutputSignal();
+                    break;
+                case 2:
+                    count = 0;
+                    break;
+                default:
+                    gpio_set_level(redLED, 0);
+                    gpio_set_level(greenLED, 0);
+            }
+       }
     }
 }
