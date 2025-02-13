@@ -21,7 +21,7 @@ static const char *TAG = "example";
 */
 #define BLINK_GPIO 19
 
-static uint8_t s_led_state = 1;
+static uint8_t bool_state = 1;
 
 #ifdef CONFIG_BLINK_LED_STRIP
 
@@ -30,7 +30,7 @@ static led_strip_handle_t led_strip;
 static void blink_led(void)
 {
     /* If the addressable LED is enabled */
-    if (s_led_state) {
+    if (bool_state) {
         /* Set the LED pixel using RGB from 0 (0%) to 255 (100%) for each color */
         led_strip_set_pixel(led_strip, 0, 16, 16, 16);
         /* Refresh the strip to send data */
@@ -73,7 +73,7 @@ static void configure_led(void)
 static void blink_led(void)
 {
     /* Set the GPIO level according to the state (LOW or HIGH)*/
-    gpio_set_level(BLINK_GPIO, s_led_state);
+    gpio_set_level(BLINK_GPIO, bool_state);
 }
 
 static void configure_led(void)
@@ -95,10 +95,10 @@ void app_main(void)
     configure_led();
 
     while (1) {
-        ESP_LOGI(TAG, "Turning the LED %s!", s_led_state == true ? "ON" : "OFF");
+        ESP_LOGI(TAG, "Turning the LED %s!", bool_state == true ? "ON" : "OFF");
         blink_led();
         /* Toggle the LED state */
-        s_led_state = !s_led_state;
+        bool_state = !bool_state;
         vTaskDelay(CONFIG_BLINK_PERIOD / portTICK_PERIOD_MS);
     }
 }
