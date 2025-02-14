@@ -194,34 +194,36 @@ void app_main(void)
        // When Enable pushbutton is pressed
        if (buttonEnableState == 1)
        {
-            toggle = !toggle;
-            vTaskDelay(debounceDelay / portTICK_PERIOD_MS);
-            printf("Toggle =" + toggle);
+            toggle = !toggle; // change toggle to true/false
+            vTaskDelay(debounceDelay / portTICK_PERIOD_MS); // Set a debounce delay so input doesn't change in the same press
+            printf("Toggle =" + toggle); // Output toggle value
        }
 
+       // When select button is pressed 
        if (buttonSelectState == 1)
        {
-            count += 1;
-            vTaskDelay(debounceDelay / portTICK_PERIOD_MS);
-            printf("Count = " + count);
+            count += 1; // Increase count value
+            vTaskDelay(debounceDelay / portTICK_PERIOD_MS); // Set a debounce delay so input doesn't change in the same press
+            printf("Count = " + count); // Output count value
        }
 
+       // When toggle is true
        if (toggle == true)
        {
             switch (count)
             {
-                case 0:
-                    dataOutputSignal();
+                case 0: // When count = 0
+                    dataOutputSignal(); // Output original data waveform
                     break;
-                case 1:
-                    altDataOutputSignal();
+                case 1: // When count = 1
+                    altDataOutputSignal(); // Output alternative data waveform
                     break;
-                case 2:
-                    count = 0;
+                case 2: // When count = 2
+                    count = 0; // Reset count to 0
                     break;
-                default:
-                    gpio_set_level(redLED, 0);
-                    gpio_set_level(greenLED, 0);
+                default: // In the circumstance that count does not equal 0, 1 or 2
+                    gpio_set_level(redLED, 0); // Set red LED LOW
+                    gpio_set_level(greenLED, 0); // Set green LED LOW
             }
        }
     }
