@@ -25,7 +25,7 @@ static const char *TAG = "example";
 #define redLED 21
 #define OUTPUT_SELECT 23
 #define OUTPUT_ENABLE 15
-#define TSyncON 50
+#define TSyncON 0.05
 
 // Defining paramters
 /*
@@ -115,7 +115,7 @@ static void dataOutputSignal()
 {
     // Start TsyncON pulse
     gpio_set_level(redLED, 1); // activate red LED
-    vTaskDelay(0.05 / portTICK_PERIOD_MS); // Set 50 microseconds HIGH delay
+    vTaskDelay(TSyncON / portTICK_PERIOD_MS); // Set 50 microseconds HIGH delay
     gpio_set_level(redLED, 0); // deactivate red LED
     // Start parameter A pulse
     gpio_set_level(greenLED, 1); // activate green LED
@@ -131,45 +131,45 @@ static void dataOutputSignal()
         vTaskDelay(param_b / portTICK_PERIOD_MS); // Paramter B delay pulse LOW in milliseconds
     }
 
-    vTaskDelay(param_d / portTICK_PERIOD_MS);
+    vTaskDelay(param_d / portTICK_PERIOD_MS); // Delay next waveform TsyncON by parameter D
 }
 
 static void altDataOutputSignal()
 {
     // Start TsyncON pulse
-    gpio_set_level(redLED, 1);
-    vTaskDelay(0.05 / portTICK_PERIOD_MS);
-    gpio_set_level(redLED, 0);
+    gpio_set_level(redLED, 1); // Activate red LED
+    vTaskDelay(0.05 / portTICK_PERIOD_MS); // Set 50 microseconds HIGH Delay
+    gpio_set_level(redLED, 0); // Deactivate red LED
 
-    for (int index = param_c; index >= 1; index++)
+    for (int index = param_c; index >= 1; index++) // increment from paramter C until 1 is met
     {
-        gpio_set_level(greenLED, 1);
-        vTaskDelay(param_a / portTICK_PERIOD_MS);
-        gpio_set_level(greenLED, 0);
-        vTaskDelay(param_b / portTICK_PERIOD_MS);
+        gpio_set_level(greenLED, 1); // Activate green LED
+        vTaskDelay((param_a + (index*50)) / portTICK_PERIOD_MS); // Delay next pulse by the sum of paramter A with the sum if the index*50 microseconds
+        gpio_set_level(greenLED, 0); // Deactivate green LED
+        vTaskDelay(param_b / portTICK_PERIOD_MS); // Set delay of next pulse by parameter B
     }
     // Start parameter A pulse
-    gpio_set_level(greenLED, 1);
-    vTaskDelay(param_a / portTICK_PERIOD_MS); // Delay in milliseconds
-    gpio_set_level(greenLED, 0);
-    vTaskDelay(param_b / portTICK_PERIOD_MS); // Delay next pulse by paramter B
+    gpio_set_level(greenLED, 1); // Activate green LED
+    vTaskDelay(param_a / portTICK_PERIOD_MS); // Delay parameter A in milliseconds
+    gpio_set_level(greenLED, 0); // Deactivate green LED
+    vTaskDelay(param_b / portTICK_PERIOD_MS); // Paramter B delay pulse LOW in milliseconds
 
-    vTaskDelay(param_d / portTICK_PERIOD_MS);
+    vTaskDelay(param_d / portTICK_PERIOD_MS); // Delay next waveform TsyncON by parameter D
 }
 
 static void configureLEDsandButtons(void)
 {
     // Reset the GPIOs to initial value on reset
-    gpio_reset_pin(greenLED);
-    gpio_reset_pin(redLED);
-    gpio_reset_pin(OUTPUT_ENABLE);
-    gpio_reset_pin(OUTPUT_SELECT);
+    gpio_reset_pin(greenLED); // Reset green LED on startup/reset
+    gpio_reset_pin(redLED); // Reset red LED on startup/reset
+    gpio_reset_pin(OUTPUT_ENABLE); // Reset OUTPUT_ENABLE pin on startup/reset
+    gpio_reset_pin(OUTPUT_SELECT); // Reset OUTPUT_SELECT pin on startup/reset
     // Set the LEDs as outputs
-    gpio_set_direction(greenLED, GPIO_MODE_OUTPUT);
-    gpio_set_direction(redLED, GPIO_MODE_OUTPUT);
+    gpio_set_direction(greenLED, GPIO_MODE_OUTPUT); // greenLED = OUTPUT
+    gpio_set_direction(redLED, GPIO_MODE_OUTPUT); // redLED = OUTPUT
     // Set the button read pins as inputs
-    gpio_set_direction(OUTPUT_ENABLE, GPIO_MODE_INPUT);
-    gpio_set_direction(OUTPUT_SELECT, GPIO_MODE_INPUT);
+    gpio_set_direction(OUTPUT_ENABLE, GPIO_MODE_INPUT); // OUTPUT_ENABLE = INPUT
+    gpio_set_direction(OUTPUT_SELECT, GPIO_MODE_INPUT); // OUTPUT_SELECT = INPUT
 }
 
 #else
@@ -191,6 +191,7 @@ void app_main(void)
        buttonEnableState = gpio_get_level(OUTPUT_ENABLE); // read enable button
        buttonSelectState = gpio_get_level(OUTPUT_SELECT); // read select button
 
+       // When Enable pushbutton is pressed
        if (buttonEnableState == 1)
        {
             toggle = !toggle;
