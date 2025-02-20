@@ -7,6 +7,7 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 #include <stdio.h>
+#include <rom/ets_sys.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
@@ -25,7 +26,7 @@ static const char *TAG = "example";
 #define redLED 21
 #define OUTPUT_SELECT 23
 #define OUTPUT_ENABLE 15
-#define TSyncON 0.05
+#define TSyncON 50
 
 // Defining paramters
 /*
@@ -34,10 +35,10 @@ static const char *TAG = "example";
 * c -> Number of waveforms in data waveform cycle
 * d -> Time delay at end of TsyncON before starting next TsyncON cycle
 */
-const int param_a = 13 * 100/1000;  // surname letter = m, value = 1300 ms
-const int param_b = 1 * 100/1000;   // surname letter = a, value = 0.1 ms
+const int param_a = 13 * 100;  // surname letter = m, value = 1300 microseconds
+const int param_b = 1 * 100;   // surname letter = a, value = 0.1 microseconds
 const int param_c = 3 + 4;          // surname letter = x, value = 7
-const int param_d = 4 * 500/1000;   // surname letter = w, value = 2 ms
+const int param_d = 4 * 500;   // surname letter = w, value = 2000 mircoseconds
 
 // Button values
 bool buttonSelectState; // Read value for button select state
@@ -115,46 +116,46 @@ static void dataOutputSignal()
 {
     // Start TsyncON pulse
     gpio_set_level(redLED, 1); // activate red LED
-    vTaskDelay(TSyncON / portTICK_PERIOD_MS); // Set 50 microseconds HIGH delay
+    ets_delay_us(TSyncON); // Set 50 microseconds HIGH delay
     gpio_set_level(redLED, 0); // deactivate red LED
     // Start parameter A pulse
     gpio_set_level(greenLED, 1); // activate green LED
-    vTaskDelay(param_a / portTICK_PERIOD_MS); // Parameter A pulse HIGH delay in milliseconds
+    ets_delay_us(param_a); // Parameter A pulse HIGH delay in milliseconds
     gpio_set_level(greenLED, 0); // deactivate green LED
-    vTaskDelay(param_b / portTICK_PERIOD_MS); // Paramter B delay pulse LOW in milliseconds
+    ets_delay_us(param_b); // Paramter B delay pulse LOW in milliseconds
 
     for (int index = 1; index <= param_c; index++) // increment through index from 1 until parameter C is met
     {
         gpio_set_level(greenLED, 1); // Activate green LED
-        vTaskDelay((param_a +(index*50)) / portTICK_PERIOD_MS); // Delay next pulse by the sum of paramter A with the sum if the index*50 microseconds
+        ets_delay_us(param_a + (index * 50)); // Delay next pulse by the sum of paramter A with the sum if the index*50 microseconds
         gpio_set_level(greenLED, 0); // Deactivate green LED
-        vTaskDelay(param_b / portTICK_PERIOD_MS); // Paramter B delay pulse LOW in milliseconds
+        ets_delay_us(param_b / portTICK_PERIOD_MS); // Paramter B delay pulse LOW in milliseconds
     }
 
-    vTaskDelay(param_d / portTICK_PERIOD_MS); // Delay next waveform TsyncON by parameter D
+    ets_delay_us(param_d); // Delay next waveform TsyncON by parameter D
 }
 
 static void altDataOutputSignal()
 {
     // Start TsyncON pulse
     gpio_set_level(redLED, 1); // Activate red LED
-    vTaskDelay(0.05 / portTICK_PERIOD_MS); // Set 50 microseconds HIGH Delay
+    ets_delay_us(TSyncON); // Set 50 microseconds HIGH Delay
     gpio_set_level(redLED, 0); // Deactivate red LED
 
     for (int index = param_c; index >= 1; index++) // increment from paramter C until 1 is met
     {
         gpio_set_level(greenLED, 1); // Activate green LED
-        vTaskDelay((param_a + (index*50)) / portTICK_PERIOD_MS); // Delay next pulse by the sum of paramter A with the sum if the index*50 microseconds
+        ets_delay_us(param_a + (index * 50)); // Delay next pulse by the sum of paramter A with the sum if the index*50 microseconds
         gpio_set_level(greenLED, 0); // Deactivate green LED
-        vTaskDelay(param_b / portTICK_PERIOD_MS); // Set delay of next pulse by parameter B
+        ets_delay_us(param_b); // Set delay of next pulse by parameter B
     }
     // Start parameter A pulse
     gpio_set_level(greenLED, 1); // Activate green LED
-    vTaskDelay(param_a / portTICK_PERIOD_MS); // Delay parameter A in milliseconds
+    ets_delay_us(param_a); // Delay parameter A in milliseconds
     gpio_set_level(greenLED, 0); // Deactivate green LED
-    vTaskDelay(param_b / portTICK_PERIOD_MS); // Paramter B delay pulse LOW in milliseconds
+    ets_delay_us(param_b); // Paramter B delay pulse LOW in milliseconds
 
-    vTaskDelay(param_d / portTICK_PERIOD_MS); // Delay next waveform TsyncON by parameter D
+    ets_delay_us(param_d); // Delay next waveform TsyncON by parameter D
 }
 
 static void configureLEDsandButtons(void)
