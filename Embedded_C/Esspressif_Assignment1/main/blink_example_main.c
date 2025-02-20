@@ -142,7 +142,7 @@ static void altDataOutputSignal()
     ets_delay_us(TSyncON); // Set 50 microseconds HIGH Delay
     gpio_set_level(redLED, 0); // Deactivate red LED
 
-    for (int index = param_c; index >= 1; index++) // increment from paramter C until 1 is met
+    for (int index = param_c; index >= 1; index--) // increment from paramter C until 1 is met
     {
         gpio_set_level(greenLED, 1); // Activate green LED
         ets_delay_us(param_a + (index * 50)); // Delay next pulse by the sum of paramter A with the sum if the index*50 microseconds
@@ -197,7 +197,6 @@ void app_main(void)
        {
             toggle = !toggle; // change toggle to true/false
             vTaskDelay(debounceDelay / portTICK_PERIOD_MS); // Set a debounce delay so input doesn't change in the same press
-            printf("Toggle =" + toggle); // Output toggle value
        }
 
        // When select button is pressed 
@@ -205,7 +204,6 @@ void app_main(void)
        {
             count += 1; // Increase count value
             vTaskDelay(debounceDelay / portTICK_PERIOD_MS); // Set a debounce delay so input doesn't change in the same press
-            printf("Count = " + count); // Output count value
        }
 
        // When toggle is true
