@@ -47,8 +47,6 @@ bool toggle = false;
 // Start setup function
 void setup() 
 {
-  Serial.begin(9600); // Serial monitor baudrate for displaying count value
-
   pinMode(greenLED, OUTPUT);      // Green LED = OUTPUT
   pinMode(redLED, OUTPUT);        // Red LED = OUTPUT
   pinMode(OUTPUT_ENABLE, INPUT);  // Output Enable = Input
@@ -67,19 +65,17 @@ void loop()
   buttonEnableState = digitalRead(OUTPUT_ENABLE);  // Read pushbutton 1 as enable select
 
   // If statement to switch toggle value to true and false
-  if (buttonSelectState == 1)
+  if (buttonEnableState == 1)
   {
     toggle = !toggle; // switch toggle value to true/false
     delay(debounceDelay); // Delay next action to prevent continuous toggle value switching
-    Serial.print("button select state = "); Serial.println(buttonSelectState); // Debug: display push button is pressed
   }
 
     // If statement to add 1 to counter when OUTPUT_ENABLE button is pressed
-  if (buttonEnableState == HIGH) 
+  if (buttonSelectState == HIGH) 
   {
     count += 1; // Add 1 to count
     delay(debounceDelay); // Delay next action to prevent continuous count increase
-    Serial.print("Count = "); Serial.println(count);
   }
 
   // If statement with count value switch case to display original and alternative outputs 
@@ -91,19 +87,13 @@ void loop()
       case 0:
         // Call original data output waveform
         dataOutputSignal();
-        Serial.print("count = "); Serial.println(count); // Debug: count value output
-        Serial.print("toggle = "); Serial.println(toggle); // Debug: toggle value output
         break;
       case 1:
         // Call alternative data waveform (option 2 from word document)
         altDataOutputSignal();
-        Serial.print("count = "); Serial.println(count); // Debug: count value output
-        Serial.print("toggle = "); Serial.println(toggle); // Debug: toggle value output
-
         break;
       case 2:
         count = 0; // Reset count value to 0 when count = 2
-        Serial.print("count = "); Serial.println(count); // Debug: count value output
         break;
       default:
         digitalWrite(redLED, LOW);
@@ -130,14 +120,14 @@ void dataOutputSignal()
   digitalWrite(greenLED, HIGH);
   delayMicroseconds(param_a);
   digitalWrite(greenLED, LOW);
-  delay(param_b);  // Delay next pulse by parameter B
+  delayMicroseconds(param_b);  // Delay next pulse by parameter B
 
   // Create continuous pulses with a greater duration depending on the product of parameter 
   // A with the index value
   for (int index = 1; index <= param_c; index++) 
   {
     digitalWrite(greenLED, HIGH);
-    delayMicroseconds(param_a+(index*50));  // delay = a + ((n-1)*50) (microsecondseconds)
+    delayMicroseconds(param_a + (index * 50));  // delay = a + ((n-1)*50) (microsecondseconds)
     digitalWrite(greenLED, LOW);
     delayMicroseconds(param_b);  // Delay next pulse by parameter B
   }
@@ -158,14 +148,12 @@ void altDataOutputSignal()
   digitalWrite(redLED, HIGH);
   delayMicroseconds(TSyncON);
   digitalWrite(redLED, LOW);
-  delayMicroseconds(param_b);
-
   // Create continuous pulses with a lesser duration depending on the product of paramter 
   // A with the index value starting from parameter C
   for (int index = param_c; index >= 1; index--) 
   {
     digitalWrite(greenLED, HIGH);
-    delayMicroseconds(param_a+(index*50));  // delay = a + ((n+1)*50) (microseconds)
+    delayMicroseconds(param_a + (index * 50));  // delay = a + ((n+1)*50) (microseconds)
     digitalWrite(greenLED, LOW);
     delayMicroseconds(param_b);  // Delay next pulse by parameter B
   }
@@ -174,6 +162,7 @@ void altDataOutputSignal()
   digitalWrite(greenLED, HIGH);
   delayMicroseconds(param_a);
   digitalWrite(greenLED, LOW);
+  delayMicroseconds(param_b); // Delay final waveform
   delayMicroseconds(param_d);  // Delay next T-sync-ON pulse by parameter D
 }
 // End alternative data waveform
