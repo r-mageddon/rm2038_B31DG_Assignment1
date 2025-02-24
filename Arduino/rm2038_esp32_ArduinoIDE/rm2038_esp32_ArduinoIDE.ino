@@ -32,7 +32,7 @@ const int param_d = 4 * 500;   // surname letter = w, value = 2000
 bool buttonSelectState; // Read value for button select state
 bool buttonEnableState; // Read value for button enable state
 const int debounceDelay = 500; // Delay to prevent debounce causing continuous incrementation 
-                               // of count value
+                               // of count value and toggle value switching
 
 // OUTPUT_ENABLE counter
 int count = 0;

@@ -129,7 +129,7 @@ static void dataOutputSignal()
         gpio_set_level(greenLED, 1); // Activate green LED
         ets_delay_us(param_a + (index * 50)); // Delay next pulse by the sum of paramter A with the sum if the index*50 microseconds
         gpio_set_level(greenLED, 0); // Deactivate green LED
-        ets_delay_us(param_b / portTICK_PERIOD_MS); // Paramter B delay pulse LOW in milliseconds
+        ets_delay_us(param_b); // Paramter B delay pulse LOW in milliseconds
     }
 
     ets_delay_us(param_d); // Delay next waveform TsyncON by parameter D
